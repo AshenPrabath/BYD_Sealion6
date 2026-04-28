@@ -25,8 +25,8 @@ export default function Navbar() {
         </div>
         
         {/* Logo */}
-        <div className="w-1/3 flex justify-center text-black font-black text-3xl tracking-tighter cursor-pointer">
-          BYD
+        <div className="w-1/3 flex justify-center cursor-pointer">
+          <img src="/images/byd-logo.png" alt="BYD" className="h-[60px] md:h-[80px] w-auto object-contain" />
         </div>
 
         {/* Right Links */}
@@ -49,7 +49,7 @@ export default function Navbar() {
             className="fixed inset-0 bg-white z-50 flex flex-col p-6 text-black"
           >
             <div className="flex justify-between items-center mb-12">
-              <div className="font-black text-3xl tracking-tighter">BYD</div>
+              <img src="/images/byd-logo.png" alt="BYD" className="h-[80px] w-auto object-contain" />
               <button onClick={() => setMobileMenuOpen(false)}>
                 <X className="w-8 h-8" />
               </button>
