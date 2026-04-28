@@ -17,7 +17,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
-          className="text-black text-3xl md:text-5xl font-bold tracking-[0.2em] mb-0 uppercase z-10"
+          className="text-black text-3xl md:text-5xl font-bold tracking-[0.2em] mb-0 uppercase z-10 whitespace-nowrap"
         >
           BYD SEALION 6
         </motion.div>
@@ -51,7 +51,7 @@ export default function Hero() {
       </motion.div>
 
       {/* Stats row */}
-      <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-20 w-full max-w-[1200px] px-8 flex justify-between items-end text-black/90">
+      <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-20 w-full max-w-[1200px] px-8 grid grid-cols-2 gap-y-6 md:flex md:justify-between items-end text-black/90">
         <Stat label="Range (Combined)" value="1100 KM" delay={0.4} />
         <Stat label="Top Speed" value="180 KM/H" delay={0.5} />
         <Stat label="Maximum Torque" value="550 Nm" delay={0.6} />

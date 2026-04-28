@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize, Minimize } from 'lucide-react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
@@ -8,6 +8,12 @@ import * as THREE from 'three';
 // rotateSpeed is negative to correct the flip (mirroring) of equirectangular panoramas
 function InteriorSphere({ url, offsetX = 0 }) {
   const texture = useTexture(url);
+  
+  // Set color space to sRGB to match the original image profile
+  if (texture) {
+    texture.colorSpace = THREE.SRGBColorSpace;
+  }
+
   texture.wrapS = THREE.RepeatWrapping;
   texture.repeat.x = -1;     // flip horizontally to fix mirrored panorama
   texture.offset.x = offsetX; // shift starting angle (0.5 = 180°)
@@ -20,11 +26,10 @@ function InteriorSphere({ url, offsetX = 0 }) {
 }
 
 const colors = [
-  { id: 'white', name: 'Arctic White', colorClass: 'bg-[#f4f4f4] border border-gray-300' },
-  { id: 'harbour-grey', name: 'Harbour Grey', colorClass: 'bg-[#4a4a4a]' },
-  { id: 'stone-grey', name: 'Stone Grey', colorClass: 'bg-[#7a7a7a]' },
-  { id: 'azure-blue', name: 'Azure Blue', colorClass: 'bg-[#005bb7]' },
-  { id: 'delmar-orange', name: 'Delmar Orange', colorClass: 'bg-[#d35400]' },
+  { id: 'white', name: 'Arctic White', prefix: 'W_', colorClass: 'bg-[#f4f4f4] border border-gray-300' },
+  { id: 'stone-grey', name: 'Stone Grey', prefix: 'S_', colorClass: 'bg-[#7a7a7a]' },
+  { id: 'harbour-grey', name: 'Harbour Grey', prefix: 'H_', colorClass: 'bg-[#4a4a4a]' },
+  { id: 'cosmos-black', name: 'Cosmos Black', prefix: 'B_', colorClass: 'bg-[#1a1a1a]' },
 ];
 
 const interiorPositions = [
@@ -48,13 +53,21 @@ export default function Car360Viewer() {
   const [interiorPosition, setInteriorPosition] = useState('middle');
   const [interiorUrls, setInteriorUrls] = useState({ middle: null, driver: null });
   const [frameIndex, setFrameIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const isDragging = useRef(false);
   const startX = useRef(0);
+  const containerRef = useRef(null);
 
-  const totalFrames = 24;
+  const totalFrames = 48;
+  const selectedColorData = colors.find(c => c.id === selectedColor) || colors[0];
+
   const exteriorImages = Array.from(
     { length: totalFrames },
-    (_, i) => `/images/360-exterior/${selectedColor}/${i}.png`
+    (_, i) => {
+      const frameNum = (i + 1).toString().padStart(4, '0');
+      const prefix = selectedColorData.prefix || '';
+      return `/images/360-exterior/${selectedColor}/${prefix}${frameNum}.png`;
+    }
   );
 
   const handleMouseDown = (e) => {
@@ -100,6 +113,24 @@ export default function Car360Viewer() {
     })();
   }, []);
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   const currentInteriorUrl = interiorUrls[interiorPosition];
 
   return (
@@ -108,21 +139,35 @@ export default function Car360Viewer() {
         <h2 className="text-4xl md:text-5xl font-bold">Inside and out.</h2>
       </div>
 
-      <div className="relative max-w-[1600px] w-full mx-auto px-6 lg:px-12">
-        <div className="relative w-full aspect-[16/9] md:h-[80vh] md:aspect-auto rounded-[20px] overflow-hidden shadow-2xl bg-white">
+      <div className={`relative w-full mx-auto ${isFullscreen ? 'max-w-none px-0' : 'max-w-[1600px] px-6 lg:px-12'}`}>
+        <div 
+          ref={containerRef}
+          className={`relative w-full overflow-hidden bg-white flex items-center justify-center ${
+            isFullscreen 
+              ? 'h-screen w-screen rounded-none bg-black' 
+              : 'aspect-square md:h-[80vh] md:aspect-auto rounded-[20px] shadow-2xl'
+          }`}
+        >
+          {/* Fullscreen Toggle */}
+          <button 
+            onClick={toggleFullscreen}
+            className="absolute top-4 right-4 z-50 p-2 bg-white/40 backdrop-blur-md rounded-full border border-white/20 text-black hover:bg-white/60 transition-colors shadow-lg"
+          >
+            {isFullscreen ? <Minimize className="w-4 h-4 md:w-5 md:h-5" /> : <Maximize className="w-4 h-4 md:w-5 md:h-5" />}
+          </button>
 
           {/* Top Center: Exterior / Interior Toggle */}
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30">
+          <div className="absolute top-4 md:top-6 left-1/2 -translate-x-1/2 z-30">
             <div className="inline-flex bg-white/40 backdrop-blur-md border border-white/20 rounded-full p-1 shadow-lg">
               <button
                 onClick={() => setView('exterior')}
-                className={`px-6 py-2 rounded-full text-xs font-bold transition-all ${view === 'exterior' ? 'bg-black text-white' : 'text-black hover:text-gray-600'}`}
+                className={`px-4 py-1.5 md:px-6 md:py-2 rounded-full text-[10px] md:text-xs font-bold transition-all ${view === 'exterior' ? 'bg-black text-white' : 'text-black hover:text-gray-600'}`}
               >
                 EXTERIOR
               </button>
               <button
                 onClick={() => setView('interior')}
-                className={`px-6 py-2 rounded-full text-xs font-bold transition-all ${view === 'interior' ? 'bg-black text-white' : 'text-black hover:text-gray-600'}`}
+                className={`px-4 py-1.5 md:px-6 md:py-2 rounded-full text-[10px] md:text-xs font-bold transition-all ${view === 'interior' ? 'bg-black text-white' : 'text-black hover:text-gray-600'}`}
               >
                 INTERIOR
               </button>
@@ -143,7 +188,9 @@ export default function Car360Viewer() {
                   key={`${selectedColor}-${index}`}
                   src={src}
                   alt={`Car exterior view ${index}`}
-                  className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none ${index === frameIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                  className={`absolute inset-0 w-full h-full select-none pointer-events-none transition-opacity duration-0 ${
+                    isFullscreen ? 'object-contain' : 'object-cover'
+                  } ${index === frameIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
                   draggable="false"
                   onError={(e) => {
                     if (e.target.src.endsWith('.png'))
@@ -152,21 +199,28 @@ export default function Car360Viewer() {
                 />
               ))}
 
-              {/* Bottom Overlay: Color Swatch + Drag Hint */}
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center space-y-4">
+              {/* Bottom Left: Selected Color Text */}
+              <div className="absolute bottom-6 md:bottom-8 left-6 md:left-10 z-30 pointer-events-none">
+                <div className="flex flex-col">
+                  <span className="text-black/40 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mb-1">BYD Sealion 6</span>
+                  <span className="text-black text-lg md:text-2xl font-bold uppercase tracking-tight">{selectedColorData.name}</span>
+                </div>
+              </div>
+
+              <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center space-y-3 md:space-y-4">
                 {/* Color Buttons */}
-                <div className="flex space-x-3">
+                <div className="flex space-x-2 md:space-x-3">
                   {colors.map((color) => (
                     <button
                       key={color.id}
-                      onClick={() => { setSelectedColor(color.id); setFrameIndex(0); }}
+                      onClick={() => { setSelectedColor(color.id); }}
                       title={color.name}
-                      className={`w-6 h-6 rounded-full border-2 transition-all ${color.colorClass} ${selectedColor === color.id ? 'border-black scale-125 shadow-md' : 'border-transparent hover:scale-110'}`}
+                      className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 transition-all ${color.colorClass} ${selectedColor === color.id ? 'border-black scale-125 shadow-md' : 'border-transparent hover:scale-110'}`}
                     />
                   ))}
                 </div>
                 {/* Drag hint */}
-                <div className="bg-black/60 backdrop-blur-md text-white px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center space-x-2">
+                <div className="bg-black/60 backdrop-blur-md text-white px-4 py-1.5 md:px-6 md:py-2 rounded-full text-[8px] md:text-[10px] font-bold uppercase tracking-widest flex items-center space-x-1 md:space-x-2">
                   <ChevronLeft className="w-3 h-3" />
                   <span>Drag to rotate</span>
                   <ChevronRight className="w-3 h-3" />
@@ -178,7 +232,13 @@ export default function Car360Viewer() {
           {/* ── INTERIOR VIEW ── */}
           {view === 'interior' && (
             <div className="w-full h-full cursor-grab active:cursor-grabbing relative">
-              <Canvas camera={{ position: [0, 0, 0.1] }}>
+              <Canvas 
+                camera={{ position: [0, 0, 0.1] }}
+                gl={{ 
+                  toneMapping: THREE.NoToneMapping,
+                  outputColorSpace: THREE.SRGBColorSpace 
+                }}
+              >
                 <OrbitControls enableZoom={false} enablePan={false} rotateSpeed={-0.5} />
                 <Suspense fallback={null}>
                   {currentInteriorUrl && (
@@ -190,22 +250,21 @@ export default function Car360Viewer() {
                 </Suspense>
               </Canvas>
 
-              {/* Bottom Overlay: Position Buttons + Look-around Hint */}
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center space-y-4 pointer-events-auto">
+              <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center space-y-3 md:space-y-4 pointer-events-auto">
                 {/* Position Selector */}
                 <div className="flex bg-white/30 backdrop-blur-md border border-white/20 rounded-full p-1 shadow-lg space-x-1">
                   {interiorPositions.map((pos) => (
                     <button
                       key={pos.id}
                       onClick={() => setInteriorPosition(pos.id)}
-                      className={`px-5 py-2 rounded-full text-[11px] font-bold transition-all ${interiorPosition === pos.id ? 'bg-black text-white' : 'text-black hover:text-gray-600'}`}
+                      className={`px-3 py-1.5 md:px-5 md:py-2 rounded-full text-[9px] md:text-[11px] font-bold transition-all ${interiorPosition === pos.id ? 'bg-black text-white' : 'text-black hover:text-gray-600'}`}
                     >
                       {pos.name}
                     </button>
                   ))}
                 </div>
                 {/* Drag hint */}
-                <div className="pointer-events-none bg-black/60 backdrop-blur-md text-white px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                <div className="pointer-events-none bg-black/60 backdrop-blur-md text-white px-4 py-1.5 md:px-6 md:py-2 rounded-full text-[8px] md:text-[10px] font-bold uppercase tracking-widest">
                   Drag to look around
                 </div>
               </div>
