@@ -595,9 +595,9 @@ export default function Car360Viewer() {
                   ))}
                 </div>
                 {/* Model + Color label below swatches */}
-                <div className="flex flex-col items-center pointer-events-none">
-                  <span className="text-black/40 text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em]">BYD Sealion 6</span>
-                  <span className="text-black text-sm md:text-xl font-bold uppercase tracking-tight">{selectedColorData.name}</span>
+                <div className="flex flex-col items-center pointer-events-none text-center">
+                  <span className="text-black/40 text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] whitespace-nowrap">BYD Sealion 6</span>
+                  <span className="text-black text-sm md:text-xl font-bold uppercase tracking-tight whitespace-nowrap">{selectedColorData.name}</span>
                 </div>
               </div>
             </div>
