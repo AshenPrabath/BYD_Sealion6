@@ -7,17 +7,17 @@ export default function Hero() {
       
       {/* Split Background (Top Half Grayish White, Bottom Half White) */}
       <div className="absolute inset-0 z-0 flex flex-col">
-        <div className="w-full h-1/2 bg-[#f0f0f0]"></div>
-        <div className="w-full h-1/2 bg-white"></div>
+        <div className="w-full h-[42%] md:h-1/2 bg-[#f0f0f0]"></div>
+        <div className="w-full h-[58%] md:h-1/2 bg-white"></div>
       </div>
 
       {/* Huge Background Text */}
-      <div className="relative z-10 w-full flex flex-col items-center justify-center mt-12">
+      <div className="relative z-10 w-full flex flex-col items-center justify-center mt-12 px-6">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
-          className="text-black text-3xl md:text-5xl font-bold tracking-[0.2em] mb-0 uppercase z-10 whitespace-nowrap"
+          className="text-black text-xl sm:text-3xl md:text-5xl font-bold tracking-[0.2em] mb-0 uppercase z-10 text-center max-w-full overflow-hidden"
         >
           BYD SEALION 6
         </motion.div>
@@ -25,7 +25,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
-          className="text-black/[0.04] text-[15vw] md:text-[200px] font-black tracking-tighter leading-none select-none text-center mt-2 md:mt-4"
+          className="text-black/[0.04] text-[15vw] md:text-[200px] font-black tracking-tighter leading-none select-none text-center mt-2 md:mt-4 whitespace-nowrap"
         >
           LIMITLESS
         </motion.h1>
@@ -36,7 +36,7 @@ export default function Hero() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1, delay: 0.4 }}
-        className="absolute z-20 top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[840px] px-4 pointer-events-none"
+        className="absolute z-20 top-[40%] md:top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[840px] px-4 pointer-events-none"
       >
         {/* User will place a transparent PNG of the car here */}
         <img 
