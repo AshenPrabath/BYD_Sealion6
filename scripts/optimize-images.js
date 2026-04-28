@@ -1,31 +1,15 @@
-/**
- * BYD Sealion 6 — Image Optimization Script
- * 
- * Converts all PNG/JPG images in the public/images directory to WebP format.
- * This can reduce file sizes by 60-80% with no visible quality loss.
- * 
- * Usage:
- *   npm install sharp    (one-time)
- *   node scripts/optimize-images.js
- * 
- * The script will:
- *   1. Convert all exterior PNGs → WebP (quality 85)
- *   2. Convert interior panorama JPGs → WebP (quality 80)
- *   3. Convert static feature/gallery images → WebP (quality 85)
- *   4. Keep originals intact (creates .webp alongside .png/.jpg)
- */
+import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const sharp = require('sharp');
-const fs = require('fs');
-const path = require('path');
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public', 'images');
 
-// Settings per folder type
 const QUALITY_MAP = {
-  '360-exterior': { quality: 85, effort: 4 },   // Good balance for 192 images
-  '360-interior': { quality: 80, effort: 6 },   // Slightly lower for huge panos
-  'default':      { quality: 85, effort: 4 },   // Everything else
+  '360-exterior': { quality: 85, effort: 4 },
+  '360-interior': { quality: 80, effort: 6 },
+  'default':      { quality: 85, effort: 4 },
 };
 
 async function convertToWebP(filePath, outputPath, quality, effort) {
@@ -35,10 +19,8 @@ async function convertToWebP(filePath, outputPath, quality, effort) {
       .toFile(outputPath);
 
     const originalSize = fs.statSync(filePath).size;
-    const newSize = info.size;
-    const savings = ((1 - newSize / originalSize) * 100).toFixed(1);
-
-    return { originalSize, newSize, savings };
+    const savings = ((1 - info.size / originalSize) * 100).toFixed(1);
+    return { originalSize, newSize: info.size, savings };
   } catch (err) {
     console.error(`  ✗ Failed: ${filePath} — ${err.message}`);
     return null;
@@ -47,9 +29,7 @@ async function convertToWebP(filePath, outputPath, quality, effort) {
 
 async function processDirectory(dir, depth = 0) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-  let totalOriginal = 0;
-  let totalNew = 0;
-  let fileCount = 0;
+  let totalOriginal = 0, totalNew = 0, fileCount = 0;
 
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
@@ -67,14 +47,13 @@ async function processDirectory(dir, depth = 0) {
 
     const webpPath = fullPath.replace(/\.(png|jpe?g)$/i, '.webp');
 
-    // Skip if WebP already exists and is newer
+    // Skip if WebP already exists and is up to date
     if (fs.existsSync(webpPath)) {
       const origMtime = fs.statSync(fullPath).mtimeMs;
       const webpMtime = fs.statSync(webpPath).mtimeMs;
       if (webpMtime >= origMtime) continue;
     }
 
-    // Determine quality based on parent folder
     const relDir = path.relative(PUBLIC_DIR, dir).split(path.sep)[0] || 'default';
     const settings = QUALITY_MAP[relDir] || QUALITY_MAP['default'];
 
@@ -84,7 +63,7 @@ async function processDirectory(dir, depth = 0) {
       totalOriginal += result.originalSize;
       totalNew += result.newSize;
       const indent = '  '.repeat(depth + 1);
-      console.log(`${indent}✓ ${entry.name} → .webp  (${result.savings}% smaller)`);
+      console.log(`${indent}✓ ${entry.name}  →  .webp  (${result.savings}% smaller, ${(result.newSize/1024).toFixed(0)}KB)`);
     }
   }
 
@@ -94,8 +73,7 @@ async function processDirectory(dir, depth = 0) {
 async function main() {
   console.log('╔══════════════════════════════════════════╗');
   console.log('║  BYD Sealion 6 — Image Optimizer         ║');
-  console.log('╚══════════════════════════════════════════╝');
-  console.log();
+  console.log('╚══════════════════════════════════════════╝\n');
 
   if (!fs.existsSync(PUBLIC_DIR)) {
     console.error(`Image directory not found: ${PUBLIC_DIR}`);
@@ -108,18 +86,19 @@ async function main() {
   const { totalOriginal, totalNew, fileCount } = await processDirectory(PUBLIC_DIR);
   const elapsed = ((Date.now() - start) / 1000).toFixed(1);
 
-  console.log();
-  console.log('─'.repeat(44));
-  console.log(`  Files converted: ${fileCount}`);
-  console.log(`  Original total:  ${(totalOriginal / 1024 / 1024).toFixed(1)} MB`);
-  console.log(`  WebP total:      ${(totalNew / 1024 / 1024).toFixed(1)} MB`);
-  console.log(`  Savings:         ${((1 - totalNew / totalOriginal) * 100).toFixed(1)}%`);
-  console.log(`  Time:            ${elapsed}s`);
-  console.log('─'.repeat(44));
-  console.log();
-  console.log('  Originals are preserved. You can delete them');
-  console.log('  once you confirm WebP versions look correct.');
-  console.log();
+  if (fileCount === 0) {
+    console.log('  All images are already optimized — nothing to do!\n');
+    return;
+  }
+
+  console.log('\n' + '─'.repeat(48));
+  console.log(`  Files converted : ${fileCount}`);
+  console.log(`  Original total  : ${(totalOriginal / 1024 / 1024).toFixed(1)} MB`);
+  console.log(`  WebP total      : ${(totalNew / 1024 / 1024).toFixed(1)} MB`);
+  console.log(`  Total savings   : ${((1 - totalNew / totalOriginal) * 100).toFixed(1)}%`);
+  console.log(`  Time            : ${elapsed}s`);
+  console.log('─'.repeat(48));
+  console.log('\n  Originals preserved. Delete them once WebP looks good.\n');
 }
 
 main();
