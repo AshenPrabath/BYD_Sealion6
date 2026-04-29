@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 export default function InteriorFeatures() {
   return (
-    <section className="py-24 bg-white text-black">
+    <section className="py-12 md:py-24 bg-white text-black">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12">
         <div className="text-center mb-20">
           <h2 className="text-4xl font-bold mb-4">Premium materials and features throughout.</h2>
@@ -60,7 +60,7 @@ function FeatureCard({ title, desc, image }) {
         </div>
       </div>
       <h3 className="text-2xl font-bold mb-4">{title}</h3>
-      <p className="text-gray-600 leading-relaxed">{desc}</p>
+      <p className="text-gray-600 leading-relaxed font-body">{desc}</p>
     </motion.div>
   );
 }

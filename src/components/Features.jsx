@@ -35,10 +35,10 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="py-24 bg-white text-black">
+    <section className="py-12 md:py-24 bg-white text-black">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12">
         <div className="text-center mb-20">
-          <h2 className="text-3xl md:text-5xl font-semibold mb-6">A large range of standard equipment <br/> and technology for the whole family.</h2>
+          <h2 className="text-3xl md:text-5xl font-semibold mb-6 font-body">A large range of standard equipment <br/> and technology for the whole family.</h2>
         </div>
 
         <div className="flex flex-col gap-24">
@@ -69,7 +69,7 @@ export default function Features() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.1 }}
-                  className="text-lg text-gray-600 leading-relaxed max-w-lg"
+                  className="text-lg text-gray-600 leading-relaxed max-w-lg font-body"
                 >
                   {feature.description}
                 </motion.p>

@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Goldman:wght@400;700&family=Michroma&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -11,6 +12,7 @@
   --font-sans: "Michroma", sans-serif;
   --font-goldman: "Goldman", sans-serif;
   --font-montserrat: "Montserrat", sans-serif;
+  --font-body: "Outfit", sans-serif;
 }
 
 @layer base {

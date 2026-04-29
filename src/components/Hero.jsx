@@ -7,8 +7,8 @@ export default function Hero() {
       
       {/* Split Background (Top Half Grayish White, Bottom Half White) */}
       <div className="absolute inset-0 z-0 flex flex-col">
-        <div className="w-full h-[42%] md:h-1/2 bg-[#f0f0f0]"></div>
-        <div className="w-full h-[58%] md:h-1/2 bg-white"></div>
+        <div className="w-full h-[38%] md:h-1/2 bg-[#f0f0f0]"></div>
+        <div className="w-full h-[62%] md:h-1/2 bg-white"></div>
       </div>
 
       {/* Huge Background Text */}
@@ -36,7 +36,7 @@ export default function Hero() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1, delay: 0.4 }}
-        className="absolute z-20 top-[40%] md:top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[840px] px-4 pointer-events-none"
+        className="absolute z-20 top-[35%] md:top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[840px] px-4 pointer-events-none"
       >
         {/* User will place a transparent PNG of the car here */}
         <img 
@@ -51,7 +51,7 @@ export default function Hero() {
       </motion.div>
 
       {/* Stats row */}
-      <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-20 w-full max-w-[1200px] px-8 grid grid-cols-2 gap-y-6 md:flex md:justify-between items-end text-black/90">
+      <div className="absolute bottom-[20%] md:bottom-32 left-1/2 -translate-x-1/2 z-20 w-full max-w-[1200px] px-8 grid grid-cols-2 gap-y-6 md:flex md:justify-between items-end text-black/90">
         <Stat label="Range (Combined)" value="1100 KM" delay={0.4} />
         <Stat label="Top Speed" value="180 KM/H" delay={0.5} />
         <Stat label="Maximum Torque" value="550 Nm" delay={0.6} />

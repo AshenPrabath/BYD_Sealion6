@@ -41,7 +41,7 @@ const specs = [
 
 export default function Specs() {
   return (
-    <section className="py-24 bg-gray-50 text-black">
+    <section className="py-12 md:py-24 bg-gray-50 text-black">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12">
         <div className="mb-16">
           <h2 className="text-4xl font-bold mb-4">BYD SEALION 6 Specifications</h2>
@@ -85,7 +85,7 @@ export default function Specs() {
 
 function SpecRow({ label, value }) {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col font-body">
       <span className="text-sm text-gray-500 mb-1">{label}</span>
       <span className="font-semibold text-gray-900">{value}</span>
     </div>

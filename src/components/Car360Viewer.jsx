@@ -22,7 +22,7 @@ function GyroControls({ orientationRef }) {
       (window.screen?.orientation?.angle ?? window.orientation ?? 0) * (Math.PI / 180);
 
     _euler.set(
-      THREE.MathUtils.degToRad(beta  ?? 0),
+      THREE.MathUtils.degToRad(beta ?? 0),
       THREE.MathUtils.degToRad(alpha ?? 0),
       -THREE.MathUtils.degToRad(gamma ?? 0),
       'YXZ'
@@ -44,7 +44,7 @@ function InteriorSphere({ url, offsetX = 0 }) {
   texture.repeat.x = -1;
   texture.offset.x = offsetX;
   return (
-    <mesh>
+    <mesh rotation={[0, -Math.PI * (80 / 180), 0]}>
       <sphereGeometry args={[500, 60, 40]} />
       <meshBasicMaterial map={texture} side={THREE.BackSide} />
     </mesh>
@@ -73,7 +73,8 @@ const globalImageCache = {};
 
 function getImagePath(colorId, prefix, frameIndex) {
   const frameNum = (frameIndex + 1).toString().padStart(4, '0');
-  return `/images/360-exterior/${colorId}/${prefix}${frameNum}.png`;
+  // Default to webp for 98% smaller file sizes
+  return `/images/360-exterior/${colorId}/${prefix}${frameNum}.webp`;
 }
 
 function loadColorImages(colorId, prefix, onProgress, onComplete) {
@@ -103,38 +104,57 @@ function loadColorImages(colorId, prefix, onProgress, onComplete) {
   };
   globalImageCache[colorId] = entry;
 
-  for (let i = 0; i < TOTAL_FRAMES; i++) {
-    const img = new Image();
-    entry.images.push(img);
+  // --- New Batch Loading System ---
+  let index = 0;
+  const BATCH_SIZE = 6;
 
-    const handleLoaded = () => {
-      entry.loadedCount++;
-      onProgress(entry.loadedCount);
-      if (entry.loadedCount === TOTAL_FRAMES) {
-        entry.complete = true;
-        entry.loading = false;
-        onComplete(entry.images);
-      }
-    };
+  function loadNextBatch() {
+    const end = Math.min(index + BATCH_SIZE, TOTAL_FRAMES);
 
-    img.onload = handleLoaded;
-    img.onerror = () => {
-      if (img.src.endsWith('.png')) {
-        img.src = img.src.replace('.png', '.webp');
-      } else if (img.src.endsWith('.webp')) {
-        img.src = img.src.replace('.webp', '.jpg');
-      } else {
-        handleLoaded();
-      }
-    };
+    for (let i = index; i < end; i++) {
+      const img = new Image();
+      entry.images[i] = img; // Keep order
 
-    img.src = getImagePath(colorId, prefix, i);
+      const handleLoaded = () => {
+        entry.loadedCount++;
+        onProgress(entry.loadedCount);
+
+        // If this was the last image of the WHOLE set
+        if (entry.loadedCount === TOTAL_FRAMES) {
+          entry.complete = true;
+          entry.loading = false;
+          onComplete(entry.images);
+        }
+      };
+
+      img.onload = handleLoaded;
+      img.onerror = () => {
+        // Fallback sequence: webp -> png -> jpg
+        if (img.src.endsWith('.webp')) {
+          img.src = img.src.replace('.webp', '.png');
+        } else if (img.src.endsWith('.png')) {
+          img.src = img.src.replace('.png', '.jpg');
+        } else {
+          handleLoaded();
+        }
+      };
+
+      img.src = getImagePath(colorId, prefix, i);
+    }
+
+    index += BATCH_SIZE;
+    if (index < TOTAL_FRAMES) {
+      // Small delay before next batch to let the UI breathe
+      setTimeout(loadNextBatch, 50);
+    }
   }
+
+  loadNextBatch();
 }
 
 // ── Interior URL resolver (checks jpg/png first, avoids webp for large panos) ──
 async function resolveInteriorUrl(basePath) {
-  for (const ext of ['jpg', 'png', 'webp']) {
+  for (const ext of ['webp', 'jpg', 'png']) {
     try {
       const res = await fetch(`${basePath}.${ext}`, { method: 'HEAD' });
       // Verify it's actually an image, not an HTML error page
@@ -142,7 +162,7 @@ async function resolveInteriorUrl(basePath) {
       if (res.ok && contentType.startsWith('image/')) {
         return `${basePath}.${ext}`;
       }
-    } catch {}
+    } catch { }
   }
   return null;
 }
@@ -329,7 +349,7 @@ export default function Car360Viewer() {
       loadColorImages(
         color.id,
         color.prefix,
-        () => {},
+        () => { },
         () => {
           currentIndex++;
           loadNext();
@@ -438,7 +458,7 @@ export default function Car360Viewer() {
   const handleOrientation = (e) => {
     orientationRef.current = {
       alpha: e.alpha,
-      beta:  e.beta,
+      beta: e.beta,
       gamma: e.gamma,
     };
   };
@@ -479,22 +499,21 @@ export default function Car360Viewer() {
   const currentInteriorUrl = interiorUrls[interiorPosition];
 
   return (
-    <section className="py-12 bg-gray-50 overflow-hidden relative text-black">
+    <section className="py-12 bg-[#f2f2f2] overflow-hidden relative text-black">
       <div className="max-w-[1600px] mx-auto px-6 lg:px-12 mb-8 text-center">
         <h2 className="text-4xl md:text-5xl font-bold">Inside and out.</h2>
       </div>
 
       <div className={`relative w-full mx-auto ${isFullscreen ? 'max-w-none px-0' : 'max-w-[1600px] px-6 lg:px-12'}`}>
-        <div 
+        <div
           ref={containerRef}
-          className={`relative w-full overflow-hidden bg-white flex items-center justify-center ${
-            isFullscreen 
-              ? 'h-screen w-screen rounded-none bg-black' 
-              : 'aspect-square md:h-[80vh] md:aspect-auto rounded-[20px] shadow-2xl'
-          }`}
+          className={`relative w-full overflow-hidden bg-[#f2f2f2] flex items-center justify-center ${isFullscreen
+            ? 'h-screen w-screen rounded-none bg-black'
+            : 'aspect-[3/5] landscape:aspect-auto landscape:h-[85vh] md:h-[80vh] md:aspect-auto rounded-[20px] shadow-2xl'
+            }`}
         >
           {/* Fullscreen Toggle */}
-          <button 
+          <button
             onClick={toggleFullscreen}
             className="absolute top-4 right-4 z-50 p-2 bg-white/40 backdrop-blur-md rounded-full border border-white/20 text-black hover:bg-white/60 transition-colors shadow-lg"
           >
@@ -533,7 +552,7 @@ export default function Car360Viewer() {
                 <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                   <Loader2 className="w-8 h-8 animate-spin text-black/40 mb-4" />
                   <div className="w-48 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-black rounded-full transition-all duration-300 ease-out"
                       style={{ width: `${loadProgress}%` }}
                     />
@@ -544,12 +563,24 @@ export default function Car360Viewer() {
                 </div>
               )}
 
-              {/* Single <canvas> — renders only the active frame */}
-              <canvas
-                ref={canvasRef}
-                className={`absolute inset-0 w-full h-full select-none pointer-events-none ${
-                  isFullscreen ? 'object-contain' : 'object-cover'
-                }`}
+              {/* Top Fill Area (Aggressive Overlap - Hidden in Landscape) */}
+              <div
+                className="md:hidden landscape:hidden absolute -top-[5px] left-0 w-full h-[30%] z-20 pointer-events-none"
+                style={{ backgroundImage: 'url(/images/top-fill.png)', backgroundSize: 'cover', backgroundPosition: 'bottom center' }}
+              />
+
+              {/* The 360 Viewer (Middle 40%) */}
+              <div className="absolute inset-0 z-10 overflow-hidden">
+                <canvas
+                  ref={canvasRef}
+                  className="absolute inset-0 w-full h-full select-none pointer-events-none object-contain md:object-cover scale-[2.0] landscape:scale-100 md:scale-100 z-10"
+                />
+              </div>
+
+              {/* Bottom Fill Area (Aggressive Overlap - Hidden in Landscape) */}
+              <div
+                className="md:hidden landscape:hidden absolute -bottom-[5px] left-0 w-full h-[30%] z-20 pointer-events-none"
+                style={{ backgroundImage: 'url(/images/bottom-fill.png)', backgroundSize: 'cover', backgroundPosition: 'top center' }}
               />
 
               {/* Animated Drag Hint Overlay */}
@@ -563,7 +594,7 @@ export default function Car360Viewer() {
                     <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-lg">
                       {/* Hand shape */}
                       <g style={{ animation: 'swipeHint 1.2s ease-in-out infinite' }}>
-                        <path d="M28 44c-7 0-14-5-14-14V20a2 2 0 0 1 4 0v6a2 2 0 0 1 4 0v-2a2 2 0 0 1 4 0v-2a2 2 0 0 1 4 0v8c2-1 4 0 4 2v2c0 5-3 10-6 10z" fill="white" stroke="rgba(0,0,0,0.15)" strokeWidth="1"/>
+                        <path d="M28 44c-7 0-14-5-14-14V20a2 2 0 0 1 4 0v6a2 2 0 0 1 4 0v-2a2 2 0 0 1 4 0v-2a2 2 0 0 1 4 0v8c2-1 4 0 4 2v2c0 5-3 10-6 10z" fill="white" stroke="rgba(0,0,0,0.15)" strokeWidth="1" />
                       </g>
                       {/* Left arrow */}
                       <path d="M10 28 L4 28 M4 28 L8 24 M4 28 L8 32" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -612,7 +643,7 @@ export default function Car360Viewer() {
                 <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                   <Loader2 className="w-8 h-8 animate-spin text-black/40 mb-4" />
                   <div className="w-48 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-black rounded-full transition-all duration-300 ease-out"
                       style={{ width: `${interiorLoadProgress}%` }}
                     />
@@ -625,11 +656,11 @@ export default function Car360Viewer() {
 
               {/* Only mount the 3D canvas after image is preloaded */}
               {interiorReady && currentInteriorUrl && (
-                <Canvas 
-                  camera={{ position: [0, 0, 0.1] }}
-                  gl={{ 
+                <Canvas
+                  camera={{ position: [0, 0, 0.1], fov: 90 }}
+                  gl={{
                     toneMapping: THREE.NoToneMapping,
-                    outputColorSpace: THREE.SRGBColorSpace 
+                    outputColorSpace: THREE.SRGBColorSpace
                   }}
                 >
                   {gyroActive
@@ -649,15 +680,13 @@ export default function Car360Viewer() {
               <button
                 onClick={toggleGyro}
                 title={gyroActive ? 'Switch to drag control' : 'Enable gyroscope'}
-                className={`absolute top-4 left-4 z-50 p-2 rounded-full border backdrop-blur-md shadow-lg transition-all ${
-                  gyroActive
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white/40 text-black border-white/20 hover:bg-white/60'
-                }`}
+                className={`absolute top-4 left-4 z-50 p-2 rounded-full border backdrop-blur-md shadow-lg transition-all ${gyroActive
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white/40 text-black border-white/20 hover:bg-white/60'
+                  }`}
               >
-                <Orbit className={`w-4 h-4 md:w-5 md:h-5 transition-all ${
-                  gyroActive ? 'text-white animate-pulse rotate-12' : 'text-black'
-                }`} />
+                <Orbit className={`w-4 h-4 md:w-5 md:h-5 transition-all ${gyroActive ? 'text-white animate-pulse rotate-12' : 'text-black'
+                  }`} />
               </button>
 
               <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center space-y-3 md:space-y-4 pointer-events-auto">

@@ -4,21 +4,20 @@ import tailwindcss from '@tailwindcss/vite'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     tailwindcss(),
     basicSsl(),
   ],
   server: {
-    host: true, // Expose to local network
-    // Set aggressive caching for image assets during development
+    host: true,
     headers: {
       'Cache-Control': 'public, max-age=31536000, immutable',
     },
   },
   build: {
-    // Increase chunk warning limit since we have heavy 3D dependencies
+    outDir: mode === 'lite' ? 'dist-viewer' : 'dist',
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
@@ -30,4 +29,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))
