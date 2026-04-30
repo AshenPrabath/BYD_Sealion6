@@ -481,19 +481,38 @@ export default function Car360Viewer() {
 
   // ── Fullscreen ──
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().catch(err => {
-        console.error(`Fullscreen error: ${err.message}`);
-      });
+    if (!isFullscreen) {
+      const el = containerRef.current;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(err => console.error(err));
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+      setIsFullscreen(true);
+      document.body.style.overflow = 'hidden'; // Lock scroll for iOS fallback
     } else {
-      document.exitFullscreen();
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(err => console.error(err));
+      } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+      setIsFullscreen(false);
+      document.body.style.overflow = 'unset';
     }
   };
 
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    const handler = () => {
+      const isNativeFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      setIsFullscreen(isNativeFullscreen);
+      document.body.style.overflow = isNativeFullscreen ? 'hidden' : 'unset';
+    };
     document.addEventListener('fullscreenchange', handler);
-    return () => document.removeEventListener('fullscreenchange', handler);
+    document.addEventListener('webkitfullscreenchange', handler);
+    return () => {
+      document.removeEventListener('fullscreenchange', handler);
+      document.removeEventListener('webkitfullscreenchange', handler);
+    };
   }, []);
 
   const currentInteriorUrl = interiorUrls[interiorPosition];
@@ -507,9 +526,9 @@ export default function Car360Viewer() {
       <div className={`relative w-full mx-auto ${isFullscreen ? 'max-w-none px-0' : 'max-w-[1600px] px-6 lg:px-12'}`}>
         <div
           ref={containerRef}
-          className={`relative w-full overflow-hidden bg-[#f2f2f2] flex items-center justify-center ${isFullscreen
-            ? 'h-screen w-screen rounded-none bg-black'
-            : 'aspect-[3/5] landscape:aspect-auto landscape:h-[85vh] md:h-[80vh] md:aspect-auto rounded-[20px] shadow-2xl'
+          className={`w-full overflow-hidden bg-[#f2f2f2] flex items-center justify-center transition-all duration-300 ${isFullscreen
+            ? 'fixed inset-0 z-[200] h-[100dvh] w-screen rounded-none bg-black'
+            : 'relative aspect-[3/5] landscape:aspect-auto landscape:h-[85dvh] md:h-[80dvh] md:aspect-auto rounded-[20px] shadow-2xl'
             }`}
         >
           {/* Fullscreen Toggle */}

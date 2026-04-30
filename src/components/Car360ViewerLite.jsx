@@ -481,25 +481,40 @@ export default function Car360ViewerLite() {
 
   // ── Fullscreen ──
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().catch(err => {
-        console.error(`Fullscreen error: ${err.message}`);
-      });
+    if (!isFullscreen) {
+      const el = containerRef.current;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(err => console.error(err));
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+      setIsFullscreen(true);
     } else {
-      document.exitFullscreen();
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(err => console.error(err));
+      } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+      setIsFullscreen(false);
     }
   };
 
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    const handler = () => {
+      setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement));
+    };
     document.addEventListener('fullscreenchange', handler);
-    return () => document.removeEventListener('fullscreenchange', handler);
+    document.addEventListener('webkitfullscreenchange', handler);
+    return () => {
+      document.removeEventListener('fullscreenchange', handler);
+      document.removeEventListener('webkitfullscreenchange', handler);
+    };
   }, []);
 
   const currentInteriorUrl = interiorUrls[interiorPosition];
 
   return (
-    <section className="w-full h-screen bg-[#f2f2f2] overflow-hidden relative text-black">
+    <section className="w-full h-[100dvh] bg-[#f2f2f2] overflow-hidden relative text-black">
       {/* "Inside and out" text removed as requested */}
 
       <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-[#f2f2f2] flex items-center justify-center">
