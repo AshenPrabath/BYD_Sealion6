@@ -569,25 +569,17 @@ export default function Car360ViewerLite() {
               </div>
             )}
 
-            {/* Top Fill Area (Aggressive Overlap - Hidden in Landscape) */}
-            <div
-              className="md:hidden landscape:hidden absolute -top-[5px] left-0 w-full h-[30%] z-20 pointer-events-none"
-              style={{ backgroundImage: 'url(/images/top-fill.png)', backgroundSize: 'cover', backgroundPosition: 'bottom center' }}
-            />
+
 
             {/* The 360 Viewer (Middle 40%) */}
             <div className="absolute inset-0 z-10 overflow-hidden">
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 w-full h-full select-none pointer-events-none object-contain md:object-cover scale-[2.0] landscape:scale-100 md:scale-100 z-10"
+                className="absolute inset-0 w-full h-full select-none pointer-events-none object-cover z-10"
               />
             </div>
 
-            {/* Bottom Fill Area (Aggressive Overlap - Hidden in Landscape) */}
-            <div
-              className="md:hidden landscape:hidden absolute -bottom-[5px] left-0 w-full h-[30%] z-20 pointer-events-none"
-              style={{ backgroundImage: 'url(/images/bottom-fill.png)', backgroundSize: 'cover', backgroundPosition: 'top center' }}
-            />
+
 
             {/* Animated Drag Hint Overlay */}
             <div
